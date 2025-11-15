@@ -1,0 +1,27 @@
+# Environment files
+.env
+.env.local
+
+# Composer dependencies
+/vendor/
+
+# Node dependencies (if any)
+/node_modules/
+
+# IDE and editor folders
+/.idea/
+/.vscode/
+*.code-workspace
+
+# Logs and cache
+/storage/logs/
+/storage/cache/
+/storage/debug/
+
+# Temporary uploads and runtime artifacts
+/storage/uploads/
+/storage/temp/
+
+# OS generated files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS pda_imports (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NULL,
+    provider_id INT NULL,
+    provider_name VARCHAR(100) NOT NULL,
+    source_filename VARCHAR(255) NOT NULL,
+    stored_path VARCHAR(255) NOT NULL,
+    status ENUM('Processed','Failed') NOT NULL DEFAULT 'Processed',
+    customer_id INT NULL,
+    customer_payload LONGTEXT NULL,
+    sale_payload LONGTEXT NULL,
+    raw_text LONGTEXT NULL,
+    notes TEXT NULL,
+    error_message TEXT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_pda_imports_provider (provider_id),
+    INDEX idx_pda_imports_customer (customer_id),
+    INDEX idx_pda_imports_status (status),
+    FOREIGN KEY (provider_id) REFERENCES providers(id) ON DELETE SET NULL,
+    FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
