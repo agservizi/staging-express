@@ -1975,6 +1975,359 @@ switch ($page) {
         http_response_code(404);
         echo 'Pagina non trovata';
         break;
+
+    // API endpoints
+    case 'api/customers':
+        $apiUser = authenticateApi();
+        $currentUser = $apiUser ?? $currentUser;
+        if ($currentUser === null) {
+            http_response_code(401);
+            jsonResponse(['error' => 'Unauthorized']);
+            break;
+        }
+
+        $id = isset($_GET['id']) ? (int) $_GET['id'] : null;
+        if ($method === 'GET') {
+            if ($id !== null && $id > 0) {
+                $customer = $customerController->find($id);
+                if ($customer === null) {
+                    jsonResponse(['error' => 'Customer not found'], 404);
+                } else {
+                    jsonResponse(['success' => true, 'data' => $customer]);
+                }
+            } else {
+                $customers = $customerController->list();
+                jsonResponse(['success' => true, 'data' => $customers]);
+            }
+        } elseif ($method === 'POST') {
+            $input = getJsonBody();
+            $result = $customerController->create($input);
+            jsonResponse($result, $result['success'] ? 201 : 422);
+        } elseif ($method === 'PUT') {
+            if ($id === null || $id <= 0) {
+                jsonResponse(['error' => 'ID required'], 400);
+            } else {
+                $input = getJsonBody();
+                $result = $customerController->update($id, $input);
+                jsonResponse($result, $result['success'] ? 200 : 422);
+            }
+        } elseif ($method === 'DELETE') {
+            if ($id === null || $id <= 0) {
+                jsonResponse(['error' => 'ID required'], 400);
+            } else {
+                $result = $customerController->delete($id);
+                jsonResponse($result, $result['success'] ? 200 : 422);
+            }
+        } else {
+            http_response_code(405);
+            jsonResponse(['error' => 'Method not allowed']);
+        }
+        break;
+
+    case 'api/products':
+        $apiUser = authenticateApi();
+        $currentUser = $apiUser ?? $currentUser;
+        if ($currentUser === null) {
+            http_response_code(401);
+            jsonResponse(['error' => 'Unauthorized']);
+            break;
+        }
+
+        $id = isset($_GET['id']) ? (int) $_GET['id'] : null;
+        if ($method === 'GET') {
+            if ($id !== null && $id > 0) {
+                $product = $productController->find($id);
+                if ($product === null) {
+                    jsonResponse(['error' => 'Product not found'], 404);
+                } else {
+                    jsonResponse(['success' => true, 'data' => $product]);
+                }
+            } else {
+                $products = $productController->listActive();
+                jsonResponse(['success' => true, 'data' => $products]);
+            }
+        } elseif ($method === 'POST') {
+            $input = getJsonBody();
+            $result = $productController->create($input, $currentUser['id']);
+            jsonResponse($result, $result['success'] ? 201 : 422);
+        } elseif ($method === 'PUT') {
+            if ($id === null || $id <= 0) {
+                jsonResponse(['error' => 'ID required'], 400);
+            } else {
+                $input = getJsonBody();
+                $result = $productController->update($id, $input, $currentUser['id']);
+                jsonResponse($result, $result['success'] ? 200 : 422);
+            }
+        } elseif ($method === 'DELETE') {
+            if ($id === null || $id <= 0) {
+                jsonResponse(['error' => 'ID required'], 400);
+            } else {
+                $result = $productController->delete($id);
+                jsonResponse($result, $result['success'] ? 200 : 422);
+            }
+        } else {
+            http_response_code(405);
+            jsonResponse(['error' => 'Method not allowed']);
+        }
+        break;
+
+    case 'api/sales':
+        $apiUser = authenticateApi();
+        $currentUser = $apiUser ?? $currentUser;
+        if ($currentUser === null) {
+            http_response_code(401);
+            jsonResponse(['error' => 'Unauthorized']);
+            break;
+        }
+
+        $id = isset($_GET['id']) ? (int) $_GET['id'] : null;
+        if ($method === 'GET') {
+            if ($id !== null && $id > 0) {
+                // Assume salesController has a find method, but it might not. For now, list and filter.
+                $filters = ['id' => $id];
+                $sales = $salesController->listSales($filters, 1, 1);
+                if (empty($sales['rows'])) {
+                    jsonResponse(['error' => 'Sale not found'], 404);
+                } else {
+                    jsonResponse(['success' => true, 'data' => $sales['rows'][0]]);
+                }
+            } else {
+                $filters = [];
+                $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+                $perPage = isset($_GET['per_page']) ? (int) $_GET['per_page'] : 10;
+                $sales = $salesController->listSales($filters, $page, $perPage);
+                jsonResponse(['success' => true, 'data' => $sales['rows'], 'pagination' => $sales['pagination']]);
+            }
+        } elseif ($method === 'POST') {
+            $input = getJsonBody();
+            $result = $salesController->create($currentUser['id'], $input);
+            jsonResponse($result, $result['success'] ? 201 : 422);
+        } else {
+            http_response_code(405);
+            jsonResponse(['error' => 'Method not allowed']);
+        }
+        break;
+
+    case 'api/offers':
+        $apiUser = authenticateApi();
+        $currentUser = $apiUser ?? $currentUser;
+        if ($currentUser === null) {
+            http_response_code(401);
+            jsonResponse(['error' => 'Unauthorized']);
+            break;
+        }
+
+        if ($method === 'GET') {
+            $offers = $offersController->listActive();
+            jsonResponse(['success' => true, 'data' => $offers]);
+        } else {
+            http_response_code(405);
+            jsonResponse(['error' => 'Method not allowed']);
+        }
+        break;
+
+    case 'api/product_requests':
+        $apiUser = authenticateApi();
+        $currentUser = $apiUser ?? $currentUser;
+        if ($currentUser === null) {
+            http_response_code(401);
+            jsonResponse(['error' => 'Unauthorized']);
+            break;
+        }
+
+        $id = isset($_GET['id']) ? (int) $_GET['id'] : null;
+        if ($method === 'GET') {
+            if ($id !== null && $id > 0) {
+                $request = $productRequestController->get($id);
+                if ($request === null) {
+                    jsonResponse(['error' => 'Request not found'], 404);
+                } else {
+                    jsonResponse(['success' => true, 'data' => $request]);
+                }
+            } else {
+                $filters = [];
+                $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+                $perPage = isset($_GET['per_page']) ? (int) $_GET['per_page'] : 10;
+                $requests = $productRequestController->list($filters, $page, $perPage);
+                jsonResponse(['success' => true, 'data' => $requests['rows'], 'pagination' => $requests['pagination']]);
+            }
+        } elseif ($method === 'PUT') {
+            if ($id === null || $id <= 0) {
+                jsonResponse(['error' => 'ID required'], 400);
+            } else {
+                $input = getJsonBody();
+                $result = $productRequestController->update($id, $input, $currentUser);
+                jsonResponse($result, $result['success'] ? 200 : 422);
+            }
+        } else {
+            http_response_code(405);
+            jsonResponse(['error' => 'Method not allowed']);
+        }
+        break;
+
+    case 'api/support_requests':
+        $apiUser = authenticateApi();
+        $currentUser = $apiUser ?? $currentUser;
+        if ($currentUser === null) {
+            http_response_code(401);
+            jsonResponse(['error' => 'Unauthorized']);
+            break;
+        }
+
+        $id = isset($_GET['id']) ? (int) $_GET['id'] : null;
+        if ($method === 'GET') {
+            if ($id !== null && $id > 0) {
+                $request = $supportRequestController->find($id);
+                if ($request === null) {
+                    jsonResponse(['error' => 'Request not found'], 404);
+                } else {
+                    jsonResponse(['success' => true, 'data' => $request]);
+                }
+            } else {
+                $filters = [];
+                $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+                $perPage = isset($_GET['per_page']) ? (int) $_GET['per_page'] : 10;
+                $requests = $supportRequestController->list($filters, $page, $perPage);
+                jsonResponse(['success' => true, 'data' => $requests['rows'], 'pagination' => $requests['pagination']]);
+            }
+        } elseif ($method === 'PUT') {
+            if ($id === null || $id <= 0) {
+                jsonResponse(['error' => 'ID required'], 400);
+            } else {
+                $input = getJsonBody();
+                $result = $supportRequestController->update($input, $currentUser);
+                jsonResponse($result, $result['success'] ? 200 : 422);
+            }
+        } else {
+            http_response_code(405);
+            jsonResponse(['error' => 'Method not allowed']);
+        }
+        break;
+
+    case 'api/iccid':
+        $apiUser = authenticateApi();
+        $currentUser = $apiUser ?? $currentUser;
+        if ($currentUser === null) {
+            http_response_code(401);
+            jsonResponse(['error' => 'Unauthorized']);
+            break;
+        }
+
+        if ($method === 'GET') {
+            $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+            $perPage = isset($_GET['per_page']) ? (int) $_GET['per_page'] : 10;
+            $stock = $iccidController->listPaginated($page, $perPage);
+            jsonResponse(['success' => true, 'data' => $stock['rows'], 'pagination' => $stock['pagination']]);
+        } elseif ($method === 'POST') {
+            $input = getJsonBody();
+            $result = $iccidController->create($input);
+            jsonResponse($result, $result['success'] ? 201 : 422);
+        } else {
+            http_response_code(405);
+            jsonResponse(['error' => 'Method not allowed']);
+        }
+        break;
+
+    case 'api/reports':
+        $apiUser = authenticateApi();
+        $currentUser = $apiUser ?? $currentUser;
+        if ($currentUser === null) {
+            http_response_code(401);
+            jsonResponse(['error' => 'Unauthorized']);
+            break;
+        }
+
+        if ($method === 'GET') {
+            $view = $_GET['view'] ?? 'daily';
+            $filters = $_GET;
+            $report = $reportsController->summary($view, $filters);
+            jsonResponse(['success' => true, 'data' => $report]);
+        } else {
+            http_response_code(405);
+            jsonResponse(['error' => 'Method not allowed']);
+        }
+        break;
+
+    case 'api/discounts':
+        $apiUser = authenticateApi();
+        $currentUser = $apiUser ?? $currentUser;
+        if ($currentUser === null) {
+            http_response_code(401);
+            jsonResponse(['error' => 'Unauthorized']);
+            break;
+        }
+
+        $id = isset($_GET['id']) ? (int) $_GET['id'] : null;
+        if ($method === 'GET') {
+            if ($id !== null && $id > 0) {
+                $discount = $discountController->find($id);
+                if ($discount === null) {
+                    jsonResponse(['error' => 'Discount not found'], 404);
+                } else {
+                    jsonResponse(['success' => true, 'data' => $discount]);
+                }
+            } else {
+                $discounts = $discountController->listAll();
+                jsonResponse(['success' => true, 'data' => $discounts]);
+            }
+        } elseif ($method === 'POST') {
+            $input = getJsonBody();
+            $result = $discountController->create($input);
+            jsonResponse($result, $result['success'] ? 201 : 422);
+        } elseif ($method === 'PUT') {
+            if ($id === null || $id <= 0) {
+                jsonResponse(['error' => 'ID required'], 400);
+            } else {
+                $active = isset($_GET['active']) ? (bool) $_GET['active'] : true;
+                $result = $discountController->setStatus($id, $active);
+                jsonResponse($result, $result['success'] ? 200 : 422);
+            }
+        } else {
+            http_response_code(405);
+            jsonResponse(['error' => 'Method not allowed']);
+        }
+        break;
+
+    case 'api/pda_import':
+        $apiUser = authenticateApi();
+        $currentUser = $apiUser ?? $currentUser;
+        if ($currentUser === null) {
+            http_response_code(401);
+            jsonResponse(['error' => 'Unauthorized']);
+            break;
+        }
+
+        if ($method === 'POST') {
+            $result = $pdaImportController->upload($_FILES, $_POST, $currentUser);
+            jsonResponse($result, $result['success'] ? 200 : 422);
+        } else {
+            http_response_code(405);
+            jsonResponse(['error' => 'Method not allowed']);
+        }
+        break;
+
+    case 'api/auth':
+        if ($method === 'POST') {
+            $action = $_GET['action'] ?? 'login';
+            if ($action === 'login') {
+                $input = getJsonBody();
+                $username = $input['username'] ?? '';
+                $password = $input['password'] ?? '';
+                $result = $authController->login(['username' => $username, 'password' => $password]);
+                if ($result['success']) {
+                    // Return session ID as token
+                    jsonResponse(['success' => true, 'token' => session_id(), 'user' => $result['user'] ?? null]);
+                } else {
+                    jsonResponse(['success' => false, 'errors' => $result['errors'] ?? []], 401);
+                }
+            } else {
+                jsonResponse(['error' => 'Action not supported'], 400);
+            }
+        } else {
+            http_response_code(405);
+            jsonResponse(['error' => 'Method not allowed']);
+        }
+        break;
 }
 
     function sanitizeInternalUrl(?string $candidate, string $fallback = 'index.php?page=support_requests'): string
@@ -3342,14 +3695,19 @@ function getJsonBody(): array
 }
 
 /**
- * @param array<string, mixed> $data
+ * @return array<string, mixed>|null
  */
-function jsonResponse(array $data, int $status = 200): void
+function authenticateApi(): ?array
 {
-    http_response_code($status);
-    header('Content-Type: application/json; charset=utf-8');
-    echo json_encode($data);
-    exit;
+    global $authService;
+    $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    if (str_starts_with($authHeader, 'Bearer ')) {
+        $token = substr($authHeader, 7);
+        session_id($token);
+        session_start();
+        return $authService->currentUser();
+    }
+    return null;
 }
 
 /**
